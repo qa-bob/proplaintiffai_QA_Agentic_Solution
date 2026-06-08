@@ -1,0 +1,26 @@
+{
+  "name": "@qa-bob/playwright-framework",
+  "version": "1.0.0",
+  "description": "Shared Playwright + TypeScript regression framework for qa-bob company sites",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:navigation": "playwright test --grep @navigation",
+    "test:forms": "playwright test --grep @forms",
+    "test:visual": "playwright test --grep @visual",
+    "test:responsive": "playwright test --grep @responsive",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "baseline": "playwright test --grep @visual --update-snapshots",
+    "lint": "eslint src tests --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0"
+  }
+}

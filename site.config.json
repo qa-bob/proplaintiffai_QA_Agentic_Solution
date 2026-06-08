@@ -1,0 +1,23 @@
+﻿{
+    "name":  "ProPlaintiff.ai",
+    "url":  "https://www.proplaintiff.ai",
+    "description":  "",
+    "industry":  "",
+    "hasContactForm":  true,
+    "expectedNavItems":  [
+
+                         ],
+    "viewports":  [
+                      "desktop",
+                      "mobile",
+                      "tablet"
+                  ],
+    "skipVisual":  false,
+    "skipForms":  false,
+    "auth":  {
+                 "required":  false,
+                 "loginUrl":  "",
+                 "username":  "",
+                 "password":  ""
+             }
+}
