@@ -80,7 +80,7 @@ export function loadSiteConfig(configDir: string = process.cwd()): SiteConfig {
     return { ...DEFAULT_CONFIG };
   }
 
-  const raw = fs.readFileSync(configPath, 'utf-8');
+  const raw = fs.readFileSync(configPath, 'utf-8').replace(/^\uFEFF/, '');
 
   let parsed: Partial<SiteConfig>;
   try {

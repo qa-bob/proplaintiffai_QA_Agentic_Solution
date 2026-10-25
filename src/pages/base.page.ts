@@ -7,7 +7,7 @@
  */
 
 import { type Page, type Locator } from '@playwright/test';
-import type { SiteConfig } from '@types/site-config.types';
+import type { SiteConfig } from '@site-types/site-config.types';
 
 export class BasePage {
   readonly page: Page;
@@ -27,9 +27,9 @@ export class BasePage {
     await this.page.goto(this.url, { waitUntil: 'domcontentloaded' });
   }
 
-  /** Wait until network activity has settled. */
+  /** Wait until the page and its subresources have loaded. */
   async waitForLoad(): Promise<void> {
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('load');
   }
 
   // ── Page metadata ───────────────────────────────────────────────────────────
