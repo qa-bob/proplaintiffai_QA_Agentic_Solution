@@ -2,9 +2,10 @@
  * global-setup.ts
  *
  * Runs once before the entire Playwright test suite.
- * Verifies the target site is reachable.  If unreachable it logs a warning
- * but does NOT fail so that CI pipelines still collect whatever results
- * they can from a flaky or temporarily unavailable site.
+ * Verifies the target site is reachable.  If the site cannot be reached at
+ * all (DNS, TLS or connection failure) the run stops here with one clear
+ * error instead of every test timing out.  Set ALLOW_UNREACHABLE=1 to
+ * proceed anyway.  HTTP 5xx responses only log a warning.
  */
 
 import * as fs from 'fs';
@@ -20,7 +21,7 @@ async function globalSetup(): Promise<void> {
 
   let config: SiteConfig = {};
   try {
-    const raw = fs.readFileSync(configPath, 'utf-8');
+    const raw = fs.readFileSync(configPath, 'utf-8').replace(/^\uFEFF/, '');
     config = JSON.parse(raw) as SiteConfig;
   } catch {
     console.warn('[global-setup] Warning: Could not read site.config.json.');
@@ -52,9 +53,16 @@ async function globalSetup(): Promise<void> {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn(
-      `[global-setup] Warning: Could not reach "${siteName}" (${siteUrl}). ` +
-        `Error: ${message}. Proceeding with tests anyway.`
+    if (process.env.ALLOW_UNREACHABLE === '1') {
+      console.warn(
+        `[global-setup] Warning: Could not reach "${siteName}" (${siteUrl}). ` +
+          `Error: ${message}. Proceeding because ALLOW_UNREACHABLE=1.`
+      );
+      return;
+    }
+    throw new Error(
+      `[global-setup] Site unreachable: "${siteName}" (${siteUrl}). Error: ${message}. ` +
+        'Set ALLOW_UNREACHABLE=1 to run the suite anyway.'
     );
   }
 }

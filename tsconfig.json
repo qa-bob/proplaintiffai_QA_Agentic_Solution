@@ -12,7 +12,7 @@
     "paths": {
       "@pages/*": ["src/pages/*"],
       "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"],
+      "@site-types/*": ["src/types/*"],
       "@fixtures/*": ["src/fixtures/*"]
     }
   },
