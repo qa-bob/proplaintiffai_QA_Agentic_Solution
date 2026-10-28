@@ -1,0 +1,91 @@
+# QA schedule for this repo's Playwright suite.
+#   Every push to main and every pull request: type check + smoke tests (desktop).
+#   Daily at 09:20: smoke tests (desktop).
+#   Weekly on Thursday at 08:54: full suite (desktop).
+#   Monthly: full suite on mobile (day 19, 08:00) and tablet (day 5, 08:07).
+# Times are UTC and staggered per repo so the sites under test get little traffic at once.
+# Run any suite on demand from the Actions tab (Run workflow).
+name: QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '20 9 * * *'   # smoke
+    - cron: '54 8 * * 4'   # full-desktop
+    - cron: '0 8 19 * *'   # full-mobile
+    - cron: '7 8 5 * *'   # full-tablet
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Which tests to run
+        type: choice
+        options: [smoke, full-desktop, full-mobile, full-tablet]
+        default: smoke
+
+concurrency:
+  group: qa-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Choose suite
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule }}
+          INPUT_SUITE: ${{ inputs.suite }}
+        run: |
+          case "$EVENT" in
+            schedule)
+              case "$CRON" in
+                "20 9 * * *") suite=smoke ;;
+                "54 8 * * 4") suite=full-desktop ;;
+                "0 8 19 * *") suite=full-mobile ;;
+                "7 8 5 * *") suite=full-tablet ;;
+                *) suite=smoke ;;
+              esac ;;
+            workflow_dispatch) suite="${INPUT_SUITE:-smoke}" ;;
+            *) suite=smoke ;;
+          esac
+          case "$suite" in
+            smoke)        args='--project=chromium-desktop --grep @smoke --grep-invert "served over HTTPS"'; browsers=chromium ;;
+            full-desktop) args='--project=chromium-desktop'; browsers=chromium ;;
+            full-mobile)  args='--project=mobile-chrome'; browsers=chromium ;;
+            full-tablet)  args='--project=tablet'; browsers='chromium webkit' ;;
+          esac
+          echo "suite=$suite" >> "$GITHUB_OUTPUT"
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+          echo "browsers=$browsers" >> "$GITHUB_OUTPUT"
+          echo "Running suite: $suite"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Type check
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: npx tsc --noEmit
+
+      - name: Install browsers
+        run: npx playwright install --with-deps ${{ steps.plan.outputs.browsers }}
+
+      - name: Run ${{ steps.plan.outputs.suite }} tests
+        run: npx playwright test --workers=1 ${{ steps.plan.outputs.args }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-${{ steps.plan.outputs.suite }}
+          path: playwright-report/
+          retention-days: 14
